@@ -68,24 +68,42 @@ if __name__ == "__main__":
 
     radius_std_dev = radius_uncertainty*radius_mean
     density_std_dev = density_uncertainty*density_mean
-    # Sample radius and density
-    radius, density = sample_radius_density(radius_mean, radius_std_dev, density_mean, density_std_dev)
 
-    times = np.logspace(-8, -5, 60)
-    integ_points = 80000
+    fit_densities = []
+    for i in range(10):
+        # Sample radius and density
+        radius, density = sample_radius_density(radius_mean, radius_std_dev, density_mean, density_std_dev)
 
-    mass = (4 / 3) * math.pi * (radius) ** 3 * density
-    full_mass = mass + .5 * (4 / 3) * math.pi * (radius) ** 3 * Const.rho_f  # Mass plus added mass
-    gamma_s = 6 * math.pi * radius * Const.eta
-    tau_f = Const.rho_f * radius ** 2 / Const.eta
+        times = np.logspace(-8, -5, 60)
+        integ_points = 80000
 
-    vacf = get_VACF_from_VPSD(times, full_mass, gamma_s, tau_f, integ_points)
-    plt.plot(times, vacf, label= f"Rho {density:.2e}kg/m^3, Mass {full_mass:.2e}kg".replace('e', ' × 10^'))
-    plt.xscale("log")
+        mass = (4 / 3) * math.pi * (radius) ** 3 * density
+        full_mass = mass + .5 * (4 / 3) * math.pi * (radius) ** 3 * Const.rho_f  # Mass plus added mass
+        gamma_s = 6 * math.pi * radius * Const.eta
+        tau_f = Const.rho_f * radius ** 2 / Const.eta
+
+        vacf = get_VACF_from_VPSD(times, full_mass, gamma_s, tau_f, integ_points)
+        # plt.plot(times, vacf, label= f"Rho {density:.2e}kg/m^3, Mass {full_mass:.2e}kg".replace('e', ' × 10^'))
+        # plt.xscale("log")
+        # plt.show()
+
+        # vacf = get_VACF_from_simulation()
+
+        est_density = fit_to_ACF(times, vacf, radius_mean, gamma_s, tau_f, integ_points)
+        fit_densities.append(est_density)
+
+        print("Estimated Density is "+ str(est_density))
+
+    # Plot the rolling mean for fit_densites
+    rolling_mean = [np.mean(fit_densities[:i+1]) for i in range(len(fit_densities))]
+
+    # Plotting
+    plt.figure(figsize=(10, 6))
+    plt.plot(rolling_mean, label='Rolling Mean', marker='o')
+    plt.axhline(density_mean, color='r', linestyle='--', label=f'Real Mean = {density_mean}')
+    plt.title('Rolling Mean vs Real Mean')
+    plt.xlabel('Index')
+    plt.ylabel('Mean Value')
+    plt.legend()
+    plt.grid(True)
     plt.show()
-
-    # vacf = get_VACF_from_simulation()
-
-    est_density = fit_to_ACF(times, vacf, radius_mean, gamma_s, tau_f, integ_points)
-
-    print("Estimated Density is "+ str(est_density))
