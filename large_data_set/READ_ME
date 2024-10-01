@@ -1,0 +1,2 @@
+In this subfolder, we upload a large dataset collected from the simulation.  We include a script to read in and analyze the data, and we 
+include the version of the simulation used to generate the dataset.
